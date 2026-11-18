@@ -1,11 +1,36 @@
 ---
-title: "sophsax19"
+title: "Sophia Saxton"
+image: website/sophsax19/media/MBC04775.jpg
+2toc: false
+about: 
+  template: broadside
+  image-shape: round
+  image-width: 17em
+  links:
+    - text: LinkedIn
+      href: www.linkedin.com/in/sophia-saxton
+      target: _blank
+    - text: GitHub
+      href: https://github.com/sophsax19
+      target: _blank 
+    - text: Email
+      href: mailto:sophia.saxton@icloud.com
 ---
 
-This is a Quarto website.
+\:::{#hero-heading}
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+Hello! My name is Sophia Saxton. My interests include Life Development, Public Health, and Social Psychology.
 
-```{r}
-1 + 1
-```
+## Education
+
+St. Olaf College \| Northfield, MN
+B.A. in Psychology, Statistics and Data Science \| Sept 2024 - May 2028
+
+Notre Dame de Sion High School for Girls \| Kansas City, MO
+High School Diploma \| August 2020 - May 2024
+
+## Experience
+
+Fellow \| Center for Interdisciplinary Research\| St. Olaf College \| Sept 2026 - present
+
+\:::

@@ -9,8 +9,22 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "sophsax19",
+    "title": "Sophia Saxton",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+    "text": ":::{#hero-heading}\nHello! My name is Sophia Saxton. My interests include Life Development, Public Health, and Social Psychology."
+  },
+  {
+    "objectID": "index.html#education",
+    "href": "index.html#education",
+    "title": "Sophia Saxton",
+    "section": "Education",
+    "text": "Education\nSt. Olaf College | Northfield, MN B.A. in Psychology, Statistics and Data Science | Sept 2024 - May 2028\nNotre Dame de Sion High School for Girls | Kansas City, MO High School Diploma | August 2020 - May 2024"
+  },
+  {
+    "objectID": "index.html#experience",
+    "href": "index.html#experience",
+    "title": "Sophia Saxton",
+    "section": "Experience",
+    "text": "Experience\nFellow | Center for Interdisciplinary Research| St. Olaf College | Sept 2026 - present\n:::"
   }
 ]
