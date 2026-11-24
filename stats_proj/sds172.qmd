@@ -1,0 +1,193 @@
+---
+title: "SDS 172 Individual Project"
+subtitle: "Spotify Dataset"
+author: "Sophia Saxton"
+date: "2024-12-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, meessage=FALSE)
+
+library(tidyverse)
+```
+
+I will be continuing with the Spotify dataset. These are the top 50 songs from 4 different dates in the year 2021. The data was taken on Jan 1, Apr 1, July 1, Oct 1. The data was collected from Spotify. Gleb Kozienko and Henry Smith collected the data for an SDS 264 project. The data was collected by viewing the rankings of the Top 50 songs on first day of Jan, Apr, July, Oct and the changes in streams, trend, and ranking were noted in comparison to the other dates.
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+library(tidyverse)
+
+spotify <- read_csv("spotify.csv")
+```
+
+## Section 1: Two-means
+
+**Question: Does the mode of the song affect the energy score of the song?**
+
+Quantitative response variable: `energy`
+
+Binary categorical explanatory variable: `mode`
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+ggplot(spotify, aes(x = energy)) +
+  geom_histogram(bins = 30) +
+  facet_grid(mode ~ .) +
+  labs(x = "Energy Scores of top 50 songs")
+
+mosaic::favstats(energy ~ mode, data = spotify)
+```
+
+On average, the higher `energy` score belongs to songs that are written in minor key versus major key.
+
+### Perform the appropriate hypothesis test 
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+t.test(energy ~ mode, data=spotify)
+```
+**Test statistic:** -1.3997
+
+**p-value:** 0.1634
+
+**95% confidence interval:** -0.06731216 - 0.01144871
+
+### Comment on the role of assumptions/conditions for the test.
+
+**Independence:** Condition is met because they are independent samples that have no effect on one another and they are not paired.
+
+**Normality:** Condition is met because there are more than 30 samples and there are no extreme outliers.
+
+### State your statistical conclusion in context.
+
+We fail to reject the null hypothesis because the p-value is above the threshold of 0.05 which indicated that there is not a significant difference in `energy` scores between songs played in major and minor keys.
+
+### Provide an interpretation of the confidence interval in context.
+
+The average difference between the `energy` scores of major key songs and minor key songs are between -0.06731216 - 0.01144871 points.
+
+## Section 2: Two Proportions
+
+**Question: Does the mode of the song affect whether or not the song is instrumental?**
+
+First binary categorical variable: `instrumentalness` (response)
+
+Second binary categorical variable: `mode` (explanatory)
+
+### Explore and describe the relationship *between* the two variables with appropriate summary statistics. Provide one plot and one sentence about the relationship (supported by summary stats).
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+ggplot(data = spotify, aes(x = mode, fill = instrumentalness)) + 
+  geom_bar(position = "fill") +
+  labs(x = "Key",
+       title = "Proportions of major and minor key songs that are in major or minor key",
+       fill = "Instrumental?",
+       y = "Proportion")
+
+table(spotify$mode, spotify$instrumentalness, 
+      dnn = c("Instrumental?", "Key?")) 
+```
+Based on the proportions table, on average, for both major and minor keys, there are more non instrumental songs.
+
+### Perform the appropriate hypothesis test and report the
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+mosaic::prop.test(instrumentalness ~ mode, data = spotify, 
+                  conf.level = 0.95, alternative = "two.sided")
+```
+
+**Test statistic:** 8.3699
+
+**p-value:** 0.003815
+
+**95% confidence interval:** 0.07521939 - 0.35666498
+
+### Comment on the role of assumptions/conditions for the test.
+
+**Independence:** The condition is met because the samples are independent from each other and do not affect each other.
+
+**Normality:** The condition is met because the sample size has more than 10 successes and failures in each group which indicates normality.
+
+### State your statistical conclusion in context.
+
+We reject the null hypothesis because the p-value is below the threshold of 0.05 which indicated that there is a difference in number of songs that are instrumental in major and minor keys.
+
+### Provide an interpretation of the confidence interval in context.
+
+The average difference in the number of instrumental songs played in major key and minor key are between 0.07521939 - 0.35666498 songs.
+
+## Section 3: Categorical Variables
+
+**Question: Does the trend of the song affect whether the song will be a top 10 song?**
+
+First categorical variable (more than 2 categories): `trend` (explanatory)
+
+Second categorical variable: `top10` (response)
+
+### Explore and describe the relationship *between* the two variables with appropriate summary statistics. Provide one plot and one sentence about the relationship (supported by summary stats).
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+ggplot(data = spotify, aes(x = trend, fill = top10)) + 
+  geom_bar(position = "fill") +
+  labs(x = "Trend",
+       title = "Does trend affect whether a song is top 10?",
+       fill = "top 10?",
+       y = "Proportion")
+```
+
+### Perform the appropriate hypothesis test
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+table(spotify$top10, spotify$trend) %>%
+  chisq.test() 
+```
+**test statistic:** 35.18
+
+**p-value:** \<0.001
+
+### Comment on the role of assumptions/conditions for the test.
+
+**Independent observations:** This condition is met because the data do not interact or affect each other.
+
+**Expected \>5:** This condition is met because there are more than 5 expected counts in each cell.
+
+### State your statistical conclusion in context.
+
+We reject the null hypothesis because the p-value is below the threshold of 0.05 which indicated that there is a difference in number of `top10` songs played with at least one group.
+
+## Section 4: Conclusion and Figure Caption
+
+I chose to see the connections between `mode` and `energy`, `mode` and `intrumentalness`, and `trend` and `top10`. Through statistical analysis, I found that there is not evidence that is statistically significant between `mode` and `energy`. The evidence suggests that there is not a connection between the `mode` of a song and its `energy` score. The average difference between the `energy` scores of major key songs and minor key songs are between -0.06731216 - 0.01144871 points. These results generally apply to songs that are popular on Spotify. There are limitations to this study because it exclusively uses songs that are popular on Spotify and this may not reflect on other music platforms. I believe we can make a causal relationship between `mode` and `energy` scores on Spotify songs since there is a lack of confounding variables. Through statistical analysis, I found evidence that is statistically significant that indicates that there is a difference between the number songs on Spotify that are played in major or minor key that are instrumental. The average difference in the number of instrumental songs played in major key and minor key are between 0.07521939 - 0.35666498 songs. Again, these results generally apply to songs that are listened to on Spotify which is a limitation of this study. I believe that there is a causal relationship between `mode` and `instrumentalness` because there is a lack of confounding variables. Lastly, I found that the evidence is statistically significant that suggests that there is a connection between the `trend` of songs and if the song is a `top10` song. This is generally applicable to Spotify songs which is the main limitation of this study. I believe that we can make a causal relationship between `trend` and whether the song is `top10` since there are not confounding variables.
+
+## Recall: Figure Captions
+
+```{r, fig.cap = "This plot reflects songs that are played in major or minor key and what proportions of those groups are instrumental songs. The mode or key of the song indicates if a song is in major or minor key while instrumental is categorized as at least being partially instrumental or not at all.The data was collected by Gleb Kozienko and Henry Smith for a SDS 264 project. The data is based on the number of streams the previous week for the top 50 songs on Jan 1, Apr 1, July 1, and Oct 1. The p-value is 0.003815 is small and is less than 0.05 so this suggests that we have the evidence that there is a significant relationship between the mode of the song and the instrumentalness of the song."}
+#| warning: FALSE
+#| message: FALSE
+
+ggplot(data = spotify, aes(x = mode, fill = instrumentalness)) + 
+  geom_bar(position = "fill") +
+  labs(x = "Key",
+       title = "Proportions of major and minor key songs that are in major or minor key",
+       fill = "Instrumental?",
+       y = "Proportion")
+
+table(spotify$mode, spotify$instrumentalness, 
+      dnn = c("Instrumental?", "Key?")) 
+```

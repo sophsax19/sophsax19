@@ -1,0 +1,177 @@
+---
+title: "SDS 164 Final Project"
+subtitle: "Toilet Talk: Wastewater Indication of COVID-19 in Communities"
+author: "Sophia Saxton"
+date: "2026-05-12"
+---
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+library(tidyverse)
+library(dplyr)
+library(viridis)
+library(ggthemes)
+library(ggridges)
+
+covid_water <- read_csv("NWSS_Public_SARS-CoV-2_Wastewater_Metric_Data_20260305.csv")
+
+covid_water_regions <- covid_water|>
+  mutate(
+    region = 
+      fct_collapse(
+        reporting_jurisdiction, 
+        "West" = c("Hawaii", "Alaska", "Washington", "Oregon", "California", "LA County", "Guam","Nevada", "Idaho", "Montana", "Wyoming", "Utah", "Colorado", "Arizona", "New Mexico"),
+        "Midwest" = c("North Dakota", "South Dakota", "Nebraska", "Kansas", "Minnesota", "Iowa", "Missouri","Wisconsin", "Illinois", "Indiana", "Michigan", "Ohio", "Chicago"), 
+        "South" = c("Texas", "Oklahoma", "Arkansas", "Louisiana", "Houston","Mississippi", "Alabama", "Tennessee", "Kentucky","Florida", "Georgia", "South Carolina", "North Carolina", "Eastern Band of Cherokee Indians", "Virginia", "West Virginia", "Maryland", "Delaware", "District of Columbia"),
+        "Northeast" = c("Pennsylvania", "Philadelphia", "New York", "New York City", "New Jersey","Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine")),
+    year = year(ymd(date_start)))
+
+mo_map <- read_csv("Missouri_Counties_20261118.csv")
+
+mo.geo <- mo_map |>
+  select("NAME", "NAME2", "CENTROID_LATITUDE", "CENTROID_LONGITUDE")
+
+covid_mo_tidy <- covid_water_regions|>
+  filter(reporting_jurisdiction == "Missouri") |>
+  right_join(mo.geo, by = join_by(county_names == NAME))
+
+stl_kc_counties <- covid_mo_tidy |>
+  filter(county_names == c("Platte", "Cass", "Clay", "Jackson", "Jefferson","St. Charles", "Franklin", "Lincoln", "Warren")) |>
+  mutate(
+    counties_city = 
+      fct_collapse(
+        county_names, 
+        "KC" = c("Platte", "Cass", "Clay", "Jackson"),
+        "STL" = c("Jefferson", "St. Charles", "Franklin", "Lincoln", "Warren"))) 
+```
+
+SARS-CoV-2, more commonly known as COVID-19, created a massive global pandemic, starting in 2019. This virus killed millions of people worldwide [^1]. Wastewater monitoring is used to predict the levels of the SARS-CoV-2 virus prior to the individuals exhibiting the illness. In an effort to mitigate the spread of the virus in the United States, the Center for Disease Control and Prevention (CDC)[^2] teamed up with the National Wastewater Surveillance System (NWSS) to monitor SARS-CoV-2 virus levels through wastewater.
+
+[^1]: "WHO COVID-19 Dashboard". *data.who.int*. [url](https://data.who.int/dashboards/covid19/deaths) #covid article
+
+[^2]: "NWSS Public SARS-CoV-2 Wastewater Metric Data". *data.cdc.gov*. [url](https://data.cdc.gov/Public-Health-Surveillance/NWSS-Public-SARS-CoV-2-Wastewater-Metric-Data/2ew6-ywp6/about_data)
+
+The dataset has different ways to measure viral load in states to see where the infectious levels are. The level of virus is in comparison to vaccination levels, hospitalizations, and deaths. This technology will be part of the future for infectious disease monitoring in the United States and worldwide. Each observational unit, or row, represents one, 15-day period, for a given jurisdiction of a treatment facility. The data provided by the CDC started on July, 21, 2020 and went until September 7th, 2025. Reporting jurisdiction will be an important variable to look at so that SARS-CoV-2 virus hot-spots can be identified. The percentile variable compares the current sample level to all of the previous samples to see where this sample ranks on amount of SARS-CoV-2 virus. Looking at state and counties will be more applicable to public health officials and easier to interpret for the general population so it will be crucial to look at these locations too.
+
+![cdc.gov](https://www.cdc.gov/wastewater/media/images/2026/03/WastewaterWeb_Hero.png) \[\^5\]
+
+## SARS-CoV-2 Levels in 6 Major U.S. Cities
+
+First, there are 6 major cities that collected wastewater independently from their state, or county. Their distribution of percentiles are from 2022-2025 to encompass more datapoints for each of the 6 cities.
+
+```{r, fig.cap = "Figure 1. There is significant variation between SARS-CoV-2 virus levels in each year in 6 different major cities in the United States. Data is collected by the Centers for Disease Control and Prevention (CDC) through the National Wastewater Surveillance System COVID-19 Data [^1]. Percentile is measured based on what percentile the current 2-week sample is based on previous percentiles of tests containing SARS-CoV-2 virus.", fig.alt = "This is a density plot with percentile on the x, or horizontal, axis and with year on the y, or vertical, axis. The density represents the number of tests that came back at a certain percentile, per year, in 6 major cities in the United States. The 6 major cities include: Chicago, District of Columbia, Houston, LA County, New York City, and Philadelphia. The ridges show ebbs and flows with the different years that are reported. 2 notable factors are LA County from 2023-2025, which shows 2023 a large left skew but rather low levels across the board in 2024 and 2025. In 2023 and 2024, Philadelphia had pretty even density across percentiles. In 2025, it is a clear bimodal density with a ton of data between 20-30% and 70-90%."}
+#| warning: FALSE
+#| message: FALSE
+
+covid_water_regions |>
+  filter(reporting_jurisdiction %in% c("Chicago", "District of Columbia", "LA County", "Houston", "New York City", "Philadelphia")) |>
+ggplot() + 
+  geom_density_ridges(
+    aes(x = percentile, y = as.factor(year), fill = as.factor(year)), 
+    alpha = 0.5, 
+    show.legend = FALSE
+  )+ 
+  facet_wrap(~ reporting_jurisdiction) +
+  scale_fill_viridis(option = "plasma", discrete = TRUE) +
+  labs(title = "Percentile of SARS-CoV-2 from 2022 to 2025 by Major Cities", x = "Percentile", y = "Year") +
+  theme_bw()
+```
+
+All of the cities, with the exception of LA County, have percentiles ranging the entire continuum. Upon investigation, LA County did not start reporting their percentile results until December 2023 which is why their plot is heavily left-skewed. Winter is often a prime time for viruses to spread in the community. The general trend, for all major cities, is that there are higher density of lower percentile values has the years increase which indicates that the levels of the SARS-CoV-2 virus is decreasing in the community.
+
+## Missouri SARS-CoV-2 Wastewater Levels by County
+
+Let's take a look at my home state of Missouri and see the average percentile of SARS-CoV-2 virus, in wastewater, by county.
+
+```{r, fig.cap = "Figure 2. Counties that are more densely populated have higher SARS-CoV-2 virus percentiles. Data is collected by the Centers for Disease Control and Prevention (CDC) through the National Wastewater Surveillance System COVID-19 Data [^1]. Percentile is measured based on what percentile the current 2-week sample is based on previous percentiles of tests containing SARS-CoV-2 virus.", fig.alt = "This is a map of the state of Missouri with the counties outlined [^3]. The centroid longitude is on the x, or horizontal, axis and the centroid latitude is on the y, or vertical, axis. The longitude ranges from 96 degrees West to 88 degrees West and the latitude ranges from 36 degrees North to 41 degrees North. The size of the points, in each county, is sized to the population served in each county. The colors indicate the percentile of the wastewater samples that contain the SARS-CoV-2 virus. Areas with larger populations, like Kansas City and St. Louis, have a higher percentile of SARS-CoV-2 virus than rural areas of Missouri."}
+#| warning: FALSE
+#| message: FALSE
+
+covid_mo_tidy |>
+  ggplot(aes(
+    x= CENTROID_LONGITUDE, 
+    y = CENTROID_LATITUDE, 
+    size = population_served, 
+    col = percentile)
+  ) + 
+    geom_point(alpha = 0.5) + 
+    geom_point(col = "black", shape = 1) + 
+    coord_map() + 
+    scale_color_viridis_c(option= "plasma", direction = -1) +
+    theme_bw() +
+    scale_size(range = c(1,10)) +
+    labs(
+      title = "COVID-19 in wastewater By County",
+      size = "Population", 
+      color = "Percentile of COVID-19 in Wastewater",
+      x = "", 
+      y = ""
+    ) +
+    borders("county", region = "missouri")
+```
+
+The more densely populate regions of Missouri (Kansas City, Springfield, St. Louis, and Columbia/Jefferson City) have higher percentiles of SARS-CoV-2 virus overall. The more rural areas of Missouri have lower percentiles due to the smaller populations [^3]. Less densely populated areas There is quite the variety of percentiles based on population density in the different counties.
+
+[^3]: "Missouri Counties". *data.mo.gov*. [url](https://data.mo.gov/Geography/Missouri-Counties/byps-gsbw/about_data)
+
+## SARS-CoV-2 Levels in Kansas City and St. Louis Between 2022-2025
+
+Next, the percentile over time, since 2022 in Kansas City counties in comparison to St. Louis counties.
+
+```{r, fig.cap = "Figure 3. There is not significant variation between SARS-CoV-2 virus levels in each year in Kansas City and St. Louis. Data is collected by the Centers for Disease Control and Prevention (CDC) through the National Wastewater Surveillance System COVID-19 Data [^1]. Percentile is measured based on what percentile the current 2-week sample is based on previous percentiles of tests containing SARS-CoV-2 virus.", fig.alt = "This is a coded scatterplot with year on the x, or horizontal, axis and with percentile on the y, or vertical, axis. The black line represents Kansas City and the orange line represents St. Louis. The points show ebbs and flows between 2022-2025. This is due to the natural variation in virus evolution and seasonality of viral disease spread. Both cities have decreased their percentiles over time with Kansas City changing to having slightly higher average percentiles, than St. Louis, in early to mid 2023."}
+#| warning: FALSE
+#| message: FALSE
+
+stl_kc_counties|>
+  filter(date_start >= "2022-01-01")|>
+ggplot(
+  aes(x = date_start, y = percentile, color = counties_city)
+) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = lm) +
+  scale_color_colorblind() +
+  theme_bw() +
+  labs(
+    title = "Percentile Over Time in KC and STL", 
+    x = "Date", 
+    y = "Percentile", 
+    
+    color = "City"
+  )
+```
+
+Overall, the two largest cities in Missouri do not differ significantly in percentiles over time. In 2022, Kansas City had more variation in the proportion with a slightly lower median. In 2023, Kansas City had a similar variation to St. Louis with a higher median percentile. In 2024, St. Louis had a lower variation and median than Kansas City. In 2025, St. Louis had a higher variation and lower median percentile than Kansas City.
+
+## SARS-CoV-2 Levels in Kansas City Counties and St. Louis Counties Between 2022-2025
+
+Lastly, the proportion of percentiles in Kansas City and St. Louis, Missouri's largest cities, by their counties.
+
+```{r, fig.cap = "Figure 4. Counties in Kansas City and St. Louis have variation in SARS-CoV-2 levels. Data is collected by the Centers for Disease Control and Prevention (CDC) through the National Wastewater Surveillance System COVID-19 Data [^1]. Percentile is measured based on what percentile the current 2-week sample is based on previous percentiles of tests containing SARS-CoV-2 virus.", fig.alt = "This is a boxplot with county on the x, or horizontal, axis and with proportion of percentiles on the y, or vertical, axis. The two cities that are included are St. Louis and Kansas City which are separated out by color. Kansas City is black and St. Louis is orange. The counties included are Lincoln, Cass, Franklin, Jackson, Clay, Platte, and Jefferson. The boxplots are arranged by median percentile. There is not a substantial difference in proportion of percentile between the two cities."}
+#| warning: FALSE
+#| message: FALSE
+
+stl_kc_counties|>
+  filter(date_start >= "2022-01-01")|>
+  mutate(NAME2 = fct_reorder(NAME2, percentile, .fun = median)) |>
+ggplot(aes(x = NAME2, y = percentile, color = counties_city)) + 
+   geom_boxplot() +               
+  geom_jitter(width = 0.3, alpha = 0.5) + 
+  labs(title = "Proportion of Percentile KCMO and STL by Year",  x = "City", y = "Proportion", color = "City") +
+  theme_bw() +
+  scale_color_colorblind()
+  
+```
+
+St. Louis had both the lowest and the highest median percentile counties in this dataset with Lincoln county and Jefferson County. Jackson and Lincoln counties had a significantly smaller 25%-75% proportion than the other counties in Kansas City and St. Louis. The median percentile of all of the selected counties hover near 50%. The points for every county are generally spread out across the proportions. With a couple of exceptions, the counties did not reach a 0 percentile or a 100 percentile in this dataset. Some counties have more data points than others which can be attributed to a lack of data throughout every testing date.
+
+## Discussion
+
+Data visualizations of viruses, like SARS-CoV-2, can be helpful in determining where virus hotspots are and where more infection reduction can be implemented. Changes in percentile levels differ, over time, due to social distancing practices, vaccination rates, and how contagious the SARS-CoV-2 virus strain is. Despite the information shown in these visualizations, there remains some limitations. The density ridge show some variability but this is due to missing data from some weeks like how LA County did not start reporting SARS-CoV-2 wastewater data until December 2023 [^4]. The map of Missouri does not encompass all counties since there is not data from every county in the state [^5]. Wastewater testing for the SARS-CoV-2 is not available statewide which is why some counties are blank. In the scatterplot and the boxplot, some counties and cities are more represented than others due to missing data or lack of reporting to the CDC and NWSS. There is a possibility of skewed data because of this. With this missing data, there is no way to be sure that these visualizations are accurate to the SARS-CoV-2 pandemic.
+
+[^4]: "Missouri Counties". *data.mo.gov*. [url](https://data.mo.gov/Geography/Missouri-Counties/byps-gsbw/about_data)
+
+[^5]: "About CDC's Wastewater Monitoring Program". *cdc.gov*. [url](https://www.cdc.gov/wastewater/about/index.html)
+
+## Citations

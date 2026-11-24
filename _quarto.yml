@@ -3,20 +3,35 @@ project:
   output-dir: docs
 
 website:
-  title: "sophsax19"
+  title: "Sophia Saxton"
   navbar:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - text: "Data Science Projects"
+        menu:
+          - text: "Toilet Talk: Wastewater Indication of COVID-19 in Communities"
+            href: ds_proj/toilet_talk.qmd
+          - text: "Text Analysis: Kidz Bop Songs"
+            href: ds_proj/kidz_bop.qmd
+          - text: "Choropleth Maps: Sport Trends"
+            href: ds_proj/sports_maps.qmd
+      - text: "Statistics Projects"
+        menu:
+          - text: "Spotify Dataset"
+            href: stats_proj/sds172.qmd
+          - text: "Analyzing Crime in Los Angeles, CA"
+            href: stats_proj/sds272.qmd
 
 format:
   html:
+    code-fold: true
+    code-summary: "Show the code"
     theme:
-      - cosmo
+      - pulse
       - brand
+    embed-resources: true
     css: styles.css
     toc: true
-
-editor: visual
+    page-layout: full
 

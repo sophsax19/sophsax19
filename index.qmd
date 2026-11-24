@@ -1,36 +1,37 @@
 ---
 title: "Sophia Saxton"
-image: website/sophsax19/media/MBC04775.jpg
-2toc: false
-about: 
-  template: broadside
-  image-shape: round
+image: media/MBC04775.jpg
+about:
+  template: trestles
+  image-shape: rectangle
   image-width: 17em
-  links:
+  links: 
     - text: LinkedIn
       href: www.linkedin.com/in/sophia-saxton
-      target: _blank
     - text: GitHub
       href: https://github.com/sophsax19
-      target: _blank 
     - text: Email
       href: mailto:sophia.saxton@icloud.com
 ---
 
-\:::{#hero-heading}
+## About Me
 
-Hello! My name is Sophia Saxton. My interests include Life Development, Public Health, and Social Psychology.
+Hello! My name is Sophia Saxton. I am currently studying Psychology, Statistics and Data Science and Gender and Sexuality Studies at St. Olaf College. My interests include Biostatistics, Public Health, and Epidemiology.
+
+Outside of school, I compete on the varsity volleyball team, work at the campus libraries, and crochet in my free time.
+
+Take a look around!
 
 ## Education
 
-St. Olaf College \| Northfield, MN
-B.A. in Psychology, Statistics and Data Science \| Sept 2024 - May 2028
+St. Olaf College | Northfield, MN
 
-Notre Dame de Sion High School for Girls \| Kansas City, MO
-High School Diploma \| August 2020 - May 2024
+B.A. in Psychology, Statistics and Data Science
+
+Concentration in Gender and Sexuality Studies
 
 ## Experience
 
-Fellow \| Center for Interdisciplinary Research\| St. Olaf College \| Sept 2026 - present
+Fellow | Center for Interdisciplinary Research
 
-\:::
+<small>*Photo credit: Mike Bostrom*</small>

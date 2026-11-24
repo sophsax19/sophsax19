@@ -1,0 +1,190 @@
+---
+title: "Choropleth Maps"
+subtitle: "United States Football Trends"
+author: "Sophia Saxton"
+date: "2026-11-21"
+---
+
+## Description
+
+For the choropleth maps assignment, I decided to use a `US states_trends.csv` file from the Kaggle user **Ankitha Sridhar**. I only used the football related variables from the dataset including `state`, `football`, and `has_nfl`.
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+library(tidyverse)
+library(leaflet)
+library(ggplot2)
+library(janitor)
+library(viridis)
+
+# Get info to draw US states for geom_polygon (connect the lat-long points)
+library(maps)
+states_polygon <- as_tibble(map_data("state")) |>
+  select(region, group, order, lat, long)
+
+# See what the state (region) levels look like in states_polygon
+unique(states_polygon$region)
+
+#no Alaska or Hawaii, is lowercase, includes DC
+
+# Get info to draw US states for geom_sf and leaflet (simple features
+#   object with multipolygon geometry column)
+library(sf)
+states_sf <- 
+  read_sf("https://rstudio.github.io/leaflet/json/us-states.geojson") |>
+  select(name, geometry)
+
+# See what the state (name) levels look like in states_sf
+unique(states_sf$name)
+
+#uppercase, includes Alaska, Hawaii, Puerto Rico, DC
+
+# Load in state-wise data for filling our choropleth maps
+
+sports <- read_csv("state_trends.csv") |>
+  clean_names() |> 
+  mutate(state = str_replace_all(str_to_lower(state), " ", "")) |>
+  select(state, football, has_nfl)
+
+#lowercase, no Alaska, Hawaii or DC
+```
+## Joining the `states_sf` and `sports` datasets
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+# Make sure all keys have the same format before joining:
+#   all lower case, no internal or external spaces
+state_sf1 <- states_sf |>
+  mutate(name = str_replace_all(str_to_lower(name), " ", "")) |>
+  rename(state = "name") |>
+  filter(!state %in% c("puertorico", "districtofcolumbia", "hawaii", "alaska"))
+
+sport_trends <- state_sf1 |>
+  full_join(sports, by = "state")
+
+```
+
+### Football Interest in Each State (static plot):
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+sport_trends |>
+   ggplot() +
+   geom_sf(aes(fill = football)) +
+   labs(title = "Score of Football Interest and Involvement",
+   fill = "Football Interest") +
+  scale_fill_viridis_c(option = "plasma")
+```
+This map shows that Alabama has the highest interest score in football, followed by Nebraska, Iowa, and Mississippi.
+
+Next we will turn this into an interactive plot so we can see each state's score.
+
+### Football Interest in Each State (interactive plot):
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+sport_trends1 <- sport_trends |>
+  mutate(labels = str_c(state, ": ", football, "/100"))
+
+# Create our own category bins 
+bins <- c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+pal <- colorBin("plasma", domain = sport_trends1$football, bins = bins)
+
+# Create labels that pop up when we hover over a state.  The labels must
+#   be part of a list where each entry is tagged as HTML code.
+library(htmltools)
+library(glue)
+
+labels <- lapply(sport_trends1$labels, HTML)
+
+leaflet(sport_trends1) |>
+  setView(-96, 37.8, 4) |>
+  addTiles() |>
+  addPolygons(
+    fillColor = ~pal(football),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) |>
+  addLegend(pal = pal, values = ~football, opacity = 0.7, title = NULL,
+    position = "bottomright") 
+```
+
+We can see that Alabama does have the highest score with 100, followed by Nebraska at 90, then Iowa at 77.
+
+I wanted to look and see if states with higher scores had professional football (NFL) teams.
+
+### National Football Team by State (static plot):
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+sport_trends |>
+   ggplot() +
+   geom_sf(aes(fill = has_nfl)) +
+   labs(title = "National Football League Teams by State",
+   fill = "NFL Team") +
+  scale_fill_manual(values = c("red3", "chartreuse3")) 
+```
+About 22 states have NFL teams when this dataset was created.
+
+### National Football League Teams by State (interactive plot):
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+
+sport_trends2 <- sport_trends |>
+  mutate(labels = str_c(state, ": ", has_nfl))
+
+labels <- lapply(sport_trends2$labels, HTML)
+
+factpal <- colorFactor(c("red3", "chartreuse3"), levels(sport_trends2$has_nfl))
+
+leaflet(sport_trends2) |>
+  setView(-96, 37.8, 4) |>
+  addTiles() |>
+  addPolygons(
+    fillColor = ~factpal(has_nfl),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) |>
+  addLegend(pal = factpal, values = ~has_nfl, opacity = 0.7, title = NULL,
+    position = "bottomright") 
+```
+
+Here, I turned the static plot into an interactive plot where we can confirm the status of an NFL team.

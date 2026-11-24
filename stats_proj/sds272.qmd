@@ -1,0 +1,10 @@
+---
+title: "SDS 272 Group Project"
+subtitle: "Analyzing Crime in Los Angeles, CA"
+author: "Anna Grace '26 and Sophia Saxton"
+date: "2025-12-10"
+---
+
+PDF of Final Project
+
+![](Final-Crime-Paper.pdf){width="100%" height="600px"}

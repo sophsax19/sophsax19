@@ -1,0 +1,227 @@
+---
+title: "Kidz Bop Songs"
+subtitle: "Text Analysis"
+author: "Sophia Saxton"
+date: "2026-10-09"
+---
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+#| echo: FALSE
+
+#running necessary packages
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(wordcloud)
+library(wordcloud2)
+library(viridis)
+library(ggthemes)
+library(gutenbergr)
+library(readr)
+library(dplyr)
+library(stringr)
+library(ggridges)
+library(knitr)
+kidz_bop <- read.csv("~/SDS264_F26/Mini Project 1/KB_censored-lyrics.csv")
+```
+
+## Introduction
+
+Kidz Bop is a popular record label in the United States that began in 2001. The label created remixed alternatives to top hits that are also sung by children. Founded by Craig Balsam and Cliff Chenfeld, who felt like there was a lack of music for school-aged kids, created a label where songs were deemed 'appropriate' for kids. These covers often include changes in lyrics from the original songs [^1].
+
+[^1]: "Who owns KIDZ BOP? 50 albums in, peek behind the curtain of the tween pop machine." *kidzbop.com*. [url](https://kidzbop.com/blog/who-owns-kidz-bop-50-albums-in-peek-behind-the-curtain-of-the-tween-pop-machine/)
+
+This dataset can be found in **the-pudding** account on Github and all of the .csv files for this dataset were added by username, **jadiehm**. The dataset has 1353 observations over 10 variables that have every song with 'bad words' in the lyrics from 2001 to 2019. `ogArtist` is the name of all of the artists on the song, `songName` is the lowercase name of the songs, `badword` is the name of the badwords and the words that they deemed inappropriate for kids, `count` is the number of times the badword appeared in the particular song, `category` is the distine groups that the bad words fit into, `ogLyric` is the original lyric from the artist, and `kbLyric` is the lyrics that Kidz Bop used in their covers of the songs.
+
+Let's explore different aspects of this dataset.
+
+This dataset explores a wide variety of songs that contain bad words over a period of almost 20 years. This allows us to look at the data temporally.
+
+We will first look at proportions of bad words in lyrics, over a period of time, by category.
+
+## Do the proportions of bad words in lyrics change over time by category?
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+#1/3 str functions
+#1/3 regular expressions
+#1/3 plots/tables
+kidz_bop |>
+  mutate(
+    total_words = str_count(ogLyric, "\\b[^ ]+\\b"), #counts each word
+    bad_words = str_count(ogLyric, badword),
+    prop_badwords = bad_words / total_words) |>
+  group_by(year, category) |> 
+  summarise(
+    sum_total = sum(total_words),
+    sum_bad = sum(bad_words),
+    prop_total = sum_bad / sum_total) |> #allows to the the sums with one value per year
+  ggplot(aes(x = year, 
+             y = prop_total, 
+             color = category)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~category) +
+  labs(
+    title = "Proportion of Bad Words in Songs Every Year by Category",
+    x = "Year",
+    y = "Proportion of Bad Words",
+    color = "Category"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  #angles the labels to be more visible
+ 
+```
+Faceting this data by category allows us to have a clearer picture of the trends. 3 categories (alcohol & drugs, other, sexual) have seen a decrease in the proportion of bad words in lyrics that contain them from 2001-2019. Identity, profanity, and violence have seen an increase in their proportions. There are some notable outliers. We see influential points in the alcohol & drugs, identity, other, and sexual categories. These points have drastically changed the slope of the trend line over time. 
+
+This could is most likely due to a few factors which include: changes in the music scene, song choices by Kidz Bop, and artists that are selected by Kidz Bop. This is obviously not a generalizable representation of all music, just ones that Kidz Bop chose to sing covers on.
+
+Another major trend in popular songs is a literary device called G-dropping which is where you shorten a word like "missing" to missin'. This "slang' version of words shortens the word and helps with the flow of the song. 
+
+We will explore the different words that were 'G_dropped' in the original song lyrics in different years.
+
+## What Years Had The Most G-dropped Words?
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+#2/3 str function 
+#3/3 str function
+#2/3 regular expression
+#2/3 plots/tables
+kidz_bop |>
+  filter(str_detect(ogLyric, "\\b[A-Za-z]+in'[^t]\\b")) |> #detects in' but not in't
+  mutate(g_drop = str_extract_all(ogLyric, "\\b[A-Za-z]+in'[^t]\\b")) |>
+  unnest(g_drop) |>
+  mutate(
+    g_drop = str_to_lower(g_drop), 
+    g_drop = str_remove_all(g_drop, "kissin'-")) |>
+  filter(g_drop != "", !is.na(g_drop)) |> #random hyphen in this duplicate entry so removed it
+   count(year) |>
+   arrange(year) |>
+    ggplot(aes(x = year, y = n)) +
+      geom_point(color = "darkorchid4") +
+      geom_smooth(se = FALSE, color = "orangered3") +
+    labs(title = "Number of Total G-dropped Lyrics Per Year", x = "Year", y = "Count") +
+  theme_minimal()
+```
+
+There are 44 words that are g-dropped in the original lyrics. Some of the g-dropped words are shortened versions of what Kidz Bop has deemed to be a bad word for their audience. The number of G-dropped lyrics remained steady from 2004 to 2011 then had a steady increase intil 2016 where there has been a large increase until 2019.
+
+Here is a Word Cloud with the G-dropped words by frequency used!
+
+## Word Cloud of G-Dropped Words by Frequency
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+#1/2 text analysis
+
+g_drop_kidz_bop <-  kidz_bop |>
+  filter(str_detect(ogLyric, "\\b[A-Za-z]+in'[^t]\\b")) |> #detects in' but not in't
+  mutate(g_drop = str_extract_all(ogLyric, "\\b[A-Za-z]+in'[^t]\\b")) |>
+  unnest(g_drop) |>
+  mutate(
+    g_drop = str_to_lower(g_drop), 
+    g_drop = str_remove_all(g_drop, "kissin'-"))
+  #random hyphen in this duplicate entry so removed it
+
+g_drop_kidz_bop_df <- g_drop_kidz_bop |>
+  count(g_drop) #making a data frame for the word cloud
+
+wordcloud(
+  words = g_drop_kidz_bop_df$g_drop, 
+  freq = g_drop_kidz_bop_df$n, 
+  max.words = 44, 
+  min.freq = 1,
+  random.order = FALSE,
+  rot.per = 0.35,
+  scale = c(5, 1),
+  colors = brewer.pal(6, "Dark2"))
+```
+
+This word cloud is sized to scale so we can determine what g-dropped words were most commonly used among the lyrics in the dataset. Words like bein', coppin', and blowin' were most popular while soberin' and nothin' were not used as much.
+
+With Kidz Bop including 'non-traditional' bad words in this dataset, we have a lot of words to work with. Kidz Bop changes lyrics with words like woman and bottle when it is considered inappropriate for kids in the context of the entire lyrics. 
+
+We will investigate the diversity of the length of the bad words in the dataset since there are so many included by Kidz Bop.
+
+## Length of Bad Words with Frequency of Occurrence in Lyrics
+
+```{r, fig.dim=c(9,7)} 
+#| warning: FALSE
+#| message: FALSE
+#2/2 text analysis
+kidz_bop |>
+  mutate(badword_length = str_length(badword)) |>
+  count(badword_length, badword) |>
+  group_by(badword_length) |>
+  slice_max(n, n = 10) |> #too many words
+  ungroup() |>
+  ggplot(aes(
+    x = fct_reorder(badword, n), #reorder by n
+    y = n, 
+    fill = badword_length)) +
+    geom_col() +  
+    coord_flip() +
+    facet_wrap(~ badword_length, scales = "free") +
+  labs(
+    title = "Bad Words Associated by Word Length",
+    y = "Number of Occurences",
+    x = "Bad Words", 
+    fill = "Bad Word Length"
+  ) +
+  theme_minimal()
+```
+
+We can see that the range of the length of bad words is from 3-11. The most common lengths of words were under 7 letters long. After 7, the frequency decreases as the number of letters in the word decreases.
+
+Each category of bad words in the dataset was independent, except for the combined category of alcohol & drugs. 
+
+We will look at these groups independently and how many words belong to one or both categories.
+
+## Separating Alcohol Bad Words from Drug Bad Words
+
+```{r, fig.alt = "This is a bar chart with category on the x, or horizontal, axis and with count on the y, or vertical, axis. The bars represents the number of bad words that are in a given category. The categories include: alcohol, drugs and both. The bars show alcohol has the most words, follwoed by drugs, and then both."}
+#| warning: FALSE
+#| message: FALSE
+#3/3 regular expression
+#3/3 plots/table
+#alt text
+
+alc_group <- "champagne|bottle|bar.*|dr[iua]nk|whiskey|bubbles|juice|henn.*|sip.*|wine|spirits|jack|tequila|pour|vodka|liquor|gin|martini|moonshine|rum|addict|intoxicate|sober"
+
+drug_group <- "blow|high|smok.*|marijuana|ice|pill.*|hookah|overdose|molly|dope|drug.*|puff|light.*|pot|ecstasy|addict|intoxicate|juice|sober"
+
+#renaming the groups for ease
+
+kidz_bop |> 
+  filter(category == "alcohol & drugs")|>
+ distinct(badword) |>
+  mutate(alc_or_drug = 
+      ifelse(
+        str_detect(badword, alc_group) & 
+        str_detect(badword, drug_group), "both", #if in both groups then gets put into 'both'
+      ifelse(
+        str_detect(badword, alc_group), "alcohol", "drugs"))) |> #if in not in alc, then in drug
+  count(alc_or_drug) |>
+  ggplot(aes(x = fct_reorder(alc_or_drug, n), y = n, fill = alc_or_drug)) + 
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Kidz Bop Alcohol and Drug Word Count",
+    x = "Category", 
+    y = "Count",
+    fill = "Alcohol or Drug?"
+  ) +
+  theme_minimal()
+
+```
+There are 24 in the alcohol category followed by 19 in the drugs category and 4 in the both category. I chose to have addict, intoxicate, juice, and sober to be in both categories because depending on context, they can implicate alcohol or drugs. 
+
+## Conclusion
+
+Overall, there is so much to look at when it comes to Kidz Bop song lyrics. How often bad words appear in lyrics, trends of slang words, the diversity of length, and the categories of bad words are just a fraction of what can be explored in this dataset. Through these analyses, we were able to see how proportions differ by category and how slang has increased overtime while exploring word length and ambiguous categorization. Next steps for this dataset include frequency of badwords within a lyric and creating another variable of 'in between' words where they are 'badwords' in context but not in daily life.
